@@ -4,6 +4,7 @@ import net.lz1998.pbbot.alias.Frame
 import net.lz1998.pbbot.bot.BotFactory
 import net.lz1998.pbbot.boot.EventProperties
 import net.lz1998.pbbot.bot.BotContainer
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.socket.*
 import org.springframework.web.socket.handler.BinaryWebSocketHandler
@@ -30,6 +31,8 @@ open class WebSocketHandler(
         ArrayBlockingQueue(eventProperties.workQueueSize)
     );
 
+    var log = LoggerFactory.getLogger(this.javaClass)
+
     override fun afterConnectionEstablished(session: WebSocketSession) {
         val xSelfId = session.handshakeHeaders["x-self-id"]?.get(0)?.toLong() ?: 0L
         if (xSelfId == 0L) {
@@ -37,7 +40,7 @@ open class WebSocketHandler(
             return
         }
         sessionMap[xSelfId] = session
-        println("$xSelfId connected")
+        log.info("$xSelfId connected")
         botContainer.bots[xSelfId] = botFactory.createBot(xSelfId, session)
     }
 
@@ -47,13 +50,22 @@ open class WebSocketHandler(
             return
         }
         sessionMap.remove(xSelfId, session)
-        println("$xSelfId disconnected")
+        log.info("$xSelfId disconnected")
         botContainer.bots.remove(xSelfId)
     }
 
 
     override fun handleBinaryMessage(session: WebSocketSession, message: BinaryMessage) {
         val frame = Frame.parseFrom(message.payload)
+        val xSelfId = session.handshakeHeaders["x-self-id"]?.get(0)?.toLong() ?: 0L
+        log.info("receive binaryMessage,sessionSelfId:" + xSelfId + ",botId:" + frame.botId)
+        if (xSelfId == 0L) {
+            return
+        }
+        val botId = frame.botId
+        if (xSelfId != botId) {
+            return
+        }
         session.sendMessage(PingMessage())
         executor.execute {
             frameHandler.handleFrame(frame)

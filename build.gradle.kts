@@ -23,7 +23,7 @@ plugins {
 }
 
 group = "net.lz1998"
-version = "0.0.14"
+version = "0.0.14.4"
 
 repositories {
     mavenCentral()
@@ -34,6 +34,7 @@ dependencies {
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.8")
     api("org.springframework.boot:spring-boot-starter-websocket")
     kapt("org.springframework.boot:spring-boot-configuration-processor")
+    api("ch.qos.logback:logback-core:1.2.3")
 
     api(kotlin("stdlib-jdk8"))
     testImplementation("junit", "junit", "4.12")
@@ -67,7 +68,7 @@ sourceSets {
     }
 }
 java {
-    withJavadocJar()
+    //withJavadocJar()
     withSourcesJar()
 }
 
@@ -124,7 +125,7 @@ publishing {
 
     repositories {
         maven {
-            setUrl("https://oss.sonatype.org/service/local/staging/deploy/maven2")
+            setUrl(properties["nexus_url"].toString())
             credentials {
                 username = properties["sonatype_username"].toString()
                 password = properties["sonatype_password"].toString()
@@ -132,7 +133,7 @@ publishing {
         }
     }
 }
-signing {
-    useGpgCmd()
-    sign(publishing.publications["maven"])
-}
+//signing {
+//    useGpgCmd()
+//    sign(publishing.publications["maven"])
+//}
